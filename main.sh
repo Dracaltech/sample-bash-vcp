@@ -34,22 +34,25 @@ process_data() {
     # example info line:
     # I,Product ID,Serial Number,Message,MS5611 Pressure,Pa,SHT31 Temperature,C,SHT31 Relative Humidity,%,*bbdd
 
-    # decode bytes into a list of strings
+    # clean out & split data line to array
     data=$(echo "$line" | cut -d'*' -f1)
     data=($data)
     olfIFS="$IFS"; IFS=',' read -r -a data <<< "${data[@]}"; IFS="$oldIFS"
+
+    # extract info line
     if [ "${data[0]}" == "I" ]; then
+      # parse field titles
       if [ "${data[1]}" == "Product ID" ]; then
         info_line=("${data[@]}")
         padlen=$(printf "%s\n" "${info_line[@]:4}" | awk '{ print length }' | sort -n | tail -n1)
         printf "%s," "${info_line[@]}"
         echo ""
+      # echo any other info lines
       else
         echo "${data[@]:3}"
       fi
       continue;
     fi
-
     if [ -z "$info_line" ]; then echo 'Awaiting info line...'; continue; fi
 
     # example readout line:
@@ -77,7 +80,6 @@ process_data() {
 }
 # run process_data in the background
 process_data &
-
 
 # Wait for background process to finish
 wait
